@@ -88,6 +88,34 @@ export function subsetInternals(pdfFont: PDFFont): SubsetEmbedder {
   return embedder as SubsetEmbedder;
 }
 
+/** The part of fontkit's TrueType subset (TTFSubset, fontkit.umd.js:40881-41004 in @pdf-lib/fontkit 1.1.1) the fix below touches. */
+interface TrueTypeSubset {
+  glyf?: Array<{ length: number }>;
+  loca?: { version?: number };
+  _addGlyph?(gid: number): number;
+}
+
+/**
+ * pdf-lib's subsetter (@pdf-lib/fontkit 1.1.1) writes a subset smaller than
+ * 128 KB with a short loca table, which stores every glyph offset halved. When
+ * a glyph has an odd byte length (Amiri and Noto Naskh Arabic have hundreds;
+ * their own loca is the long kind), every glyph after it is cut at the wrong
+ * byte and draws as fragments, with pdf-lib's drawText too. Keep the long
+ * table as soon as an odd-length glyph goes in, so fonts without one are
+ * written exactly as before. fontkit 2 (@cantoo/fontkit) keeps the font's own
+ * format, sets the version up front, and is left alone.
+ */
+function keepGlyphOffsetsExact(subset: unknown): void {
+  const ttf = subset as TrueTypeSubset;
+  const addGlyph = ttf._addGlyph;
+  if (typeof addGlyph !== 'function') return; // a CFF subset has no loca
+  ttf._addGlyph = function (this: TrueTypeSubset, gid: number) {
+    const index = addGlyph.call(this, gid);
+    if (this.loca && this.loca.version == null && (this.glyf?.[index]?.length ?? 0) % 2 === 1) this.loca.version = 1;
+    return index;
+  };
+}
+
 /** pdf-lib re-serialises a font on save only when it thinks the font changed, and only its own encodeText says so. */
 function markChanged(pdfFont: PDFFont): void {
   const flags = pdfFont as unknown as EmbedFlags;
@@ -123,7 +151,8 @@ export function createLayoutFont(fontBytes: Uint8Array | ArrayBuffer): Font {
 export async function embedTextFont(doc: PDFDocument, fontBytes: Uint8Array | ArrayBuffer): Promise<PdfTextFont> {
   if (!(doc as unknown as { fontkit?: unknown }).fontkit) doc.registerFontkit(fontkit);
   const pdfFont = await doc.embedFont(fontBytes, { subset: true });
-  subsetInternals(pdfFont); // fail now, not at the first draw, if pdf-lib moved its internals
+  // Fail now, not at the first draw, if pdf-lib moved its internals.
+  keepGlyphOffsetsExact(subsetInternals(pdfFont).subset);
   return { pdfFont, font: createLayoutFont(fontBytes) };
 }
 

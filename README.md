@@ -55,20 +55,22 @@ You need a font with Arabic (or Hebrew) glyphs. See [Fonts](#fonts) for the ones
 
 Tested on 2026-11-12 with each font's current file from Google Fonts (all SIL Open Font License), drawing a price with digits, a line with harakat and lam-alef, and Persian:
 
-| Font | pdf-lib 1.17.1, `@pdfme/pdf-lib` | `@cantoo/pdf-lib` | Copy and search |
-|---|---|---|---|
-| Cairo | ✅ | ✅ | ✅ |
-| IBM Plex Sans Arabic | ✅ | ✅ | ✅ |
-| Vazirmatn | ✅ | ✅ | ✅ |
-| Almarai | ✅ | ✅ | ✅ |
-| Tajawal (no Persian letters or digits) | ✅ | ✅ | ✅ |
-| Noto Sans Arabic, 2022 static build | ✅ | ✅ | ✅ |
-| Amiri | ❌ broken by the subsetter | ✅ | ✅ (pdf.js splits ريال) |
-| Noto Naskh Arabic | ❌ broken by the subsetter | ✅ | ❌ dotless shapes |
-| Noto Sans Arabic, current build | ✅ | ✅ | ❌ dotless shapes |
-| Noto Kufi Arabic | ✅ | ✅ | ❌ dotless shapes |
+| Font | Draws correctly | Copy and search |
+|---|---|---|
+| Cairo | ✅ | ✅ |
+| IBM Plex Sans Arabic | ✅ | ✅ |
+| Vazirmatn | ✅ | ✅ |
+| Almarai | ✅ | ✅ |
+| Tajawal (no Persian letters or digits) | ✅ | ✅ |
+| Noto Sans Arabic, 2022 static build | ✅ | ✅ |
+| Amiri | ✅ | ✅, but readers sometimes split a word in two |
+| Noto Naskh Arabic | ✅ | ❌ dotless shapes |
+| Noto Sans Arabic, current build | ✅ | ❌ dotless shapes |
+| Noto Kufi Arabic | ✅ | ❌ dotless shapes |
 
-"Broken by the subsetter" means pdf-lib 1.17.1's font subsetter (`@pdf-lib/fontkit` 1.1.1) writes a font with missing outlines. Plain `drawText` with `{ subset: true }` breaks the same way. `@cantoo/pdf-lib` ships a newer subsetter. Only TrueType outlines (`.ttf`) were tested.
+Same results with pdf-lib 1.17.1, `@pdfme/pdf-lib` and `@cantoo/pdf-lib`. Only TrueType outlines (`.ttf`) were tested.
+
+pdf-lib's own font subsetting turns Amiri and Noto Naskh Arabic into fragments. Its subsetter (`@pdf-lib/fontkit` 1.1.1) writes small subsets with a short `loca` table, which can't point at the odd byte offsets these two fonts use. `embedTextFont` keeps the long table for fonts that need it, so they draw correctly here. A font you embed yourself with `doc.embedFont(bytes, { subset: true })` still hits the bug.
 
 ## pdf-lib versions
 
