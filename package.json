@@ -1,0 +1,105 @@
+{
+  "name": "pdf-lib-arabic",
+  "version": "0.1.0",
+  "description": "Arabic, Persian and Hebrew text for pdf-lib: bidi, shaping and glyph placement, with text that stays selectable and searchable.",
+  "keywords": [
+    "pdf-lib",
+    "pdf",
+    "arabic",
+    "persian",
+    "farsi",
+    "hebrew",
+    "rtl",
+    "bidi",
+    "shaping",
+    "fontkit"
+  ],
+  "license": "MIT",
+  "author": "ogcalyps",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ogcalyps/pdf-lib-arabic.git"
+  },
+  "homepage": "https://github.com/ogcalyps/pdf-lib-arabic#readme",
+  "bugs": "https://github.com/ogcalyps/pdf-lib-arabic/issues",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./pdfme": {
+      "import": {
+        "types": "./dist/pdfme.d.ts",
+        "default": "./dist/pdfme.js"
+      },
+      "require": {
+        "types": "./dist/pdfme.d.cts",
+        "default": "./dist/pdfme.cjs"
+      }
+    },
+    "./cantoo": {
+      "import": {
+        "types": "./dist/cantoo.d.ts",
+        "default": "./dist/cantoo.js"
+      },
+      "require": {
+        "types": "./dist/cantoo.d.cts",
+        "default": "./dist/cantoo.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup && node scripts/flavours.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "smoke": "node scripts/smoke.mjs",
+    "prepack": "npm run build && node scripts/readme-links.mjs npm",
+    "postpack": "node scripts/readme-links.mjs github"
+  },
+  "peerDependencies": {
+    "pdf-lib": "1.17.1",
+    "@pdfme/pdf-lib": "^6.2.8",
+    "@cantoo/pdf-lib": "^2.11.1"
+  },
+  "peerDependenciesMeta": {
+    "pdf-lib": {
+      "optional": true
+    },
+    "@pdfme/pdf-lib": {
+      "optional": true
+    },
+    "@cantoo/pdf-lib": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@pdf-lib/fontkit": "1.1.1",
+    "bidi-js": "1.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.4.299",
+    "tsup": "8.5.1",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Tests
+        run: npm test
+
+      - name: Install pdftotext
+        run: sudo apt-get update -q && sudo apt-get install -y -q poppler-utils
+
+      # Builds the tarball npm would publish, installs it in a fresh project and
+      # checks every entry point writes Arabic that pdf.js and pdftotext can search.
+      - name: Pack and try the tarball
+        run: |
+          npm pack
+          node scripts/smoke.mjs pdf-lib-arabic-*.tgz
+
+  forks:
+    name: Tests on ${{ matrix.fork.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        fork:
+          - { name: '@pdfme/pdf-lib', id: pdfme, install: 'pdf-lib@npm:@pdfme/pdf-lib@6.2.8' }
+          - { name: '@cantoo/pdf-lib', id: cantoo, install: 'pdf-lib@npm:@cantoo/pdf-lib@2.11.1 @cantoo/fontkit@2.0.12' }
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Swap pdf-lib for the fork
+        run: npm install --no-save --no-audit --no-fund ${{ matrix.fork.install }}
+
+      - name: Tests
+        run: npm test
+        env:
+          PDF_LIB_FORK: ${{ matrix.fork.id }}
