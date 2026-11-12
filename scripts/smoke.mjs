@@ -55,7 +55,9 @@ try {
   writeFileSync(
     join(dir, 'read.mjs'),
     `import { readFile } from 'node:fs/promises';
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+// pdf.js 6 needs Promise.withResolvers, which Node 20 lacks (the package doesn't).
+Promise.withResolvers ??= () => { let resolve, reject; const promise = new Promise((a, b) => ((resolve = a), (reject = b))); return { promise, resolve, reject }; };
+const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
 const doc = await getDocument({ data: new Uint8Array(await readFile(process.argv[2])), verbosity: 0 }).promise;
 for (let n = 1; n <= doc.numPages; n++) {
   const content = await (await doc.getPage(n)).getTextContent();
